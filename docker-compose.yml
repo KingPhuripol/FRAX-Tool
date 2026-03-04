@@ -1,0 +1,46 @@
+services:
+  frax-tool:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: frax-tool-app
+    restart: unless-stopped
+    ports:
+      - "8080:8000"
+    volumes:
+      # Persist database outside container
+      - frax_db_data:/app/data
+    environment:
+      - DATABASE_PATH=/app/data/frax_patients.db
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    labels:
+      - "com.smartlab.project=frax-tool"
+      - "com.smartlab.version=1.0.0"
+
+volumes:
+  frax_db_data:
+    driver: local
+
+# ─────────────────────────────────────────────
+# วิธีใช้งาน:
+#
+#   Build & Start:
+#     docker compose up -d --build
+#
+#   ดู logs:
+#     docker compose logs -f
+#
+#   หยุด:
+#     docker compose down
+#
+#   หยุด + ลบ database:
+#     docker compose down -v
+#
+#   เปิดเว็บที่: http://localhost:8000
+# ─────────────────────────────────────────────

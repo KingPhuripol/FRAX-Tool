@@ -1,0 +1,2898 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FRAX® Tool — ระบบคัดกรองความเสี่ยงกระดูกหัก</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <style>
+      /* ── Global Reset ─────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg-dark: #060b18;
+        --bg-card: rgba(255, 255, 255, 0.05);
+        --border: rgba(255, 255, 255, 0.12);
+        --primary: #6366f1;
+        --primary-l: #818cf8;
+        --secondary: #8b5cf6;
+        --cyan: #06b6d4;
+        --text: #f1f5f9;
+        --text-muted: #94a3b8;
+        --no-risk: #10b981;
+        --low-risk: #3b82f6;
+        --mod-risk: #f59e0b;
+        --high-risk: #ef4444;
+        --radius: 16px;
+        --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: "Noto Sans Thai", "Inter", sans-serif;
+        background: var(--bg-dark);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* ── Animated Background ────────────────────── */
+      .bg-scene {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        background:
+          radial-gradient(
+            ellipse 80% 60% at 20% -10%,
+            #1e1b4b 0%,
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse 50% 50% at 80% 110%,
+            #0f172a 0%,
+            transparent 60%
+          ),
+          linear-gradient(160deg, #060b18 0%, #0d1b3e 50%, #1a0a2e 100%);
+      }
+      .orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.18;
+        animation: floatOrb 12s ease-in-out infinite;
+      }
+      .orb-1 {
+        width: 500px;
+        height: 500px;
+        background: #6366f1;
+        top: -100px;
+        left: -150px;
+        animation-delay: 0s;
+      }
+      .orb-2 {
+        width: 400px;
+        height: 400px;
+        background: #8b5cf6;
+        bottom: -100px;
+        right: -100px;
+        animation-delay: -4s;
+      }
+      .orb-3 {
+        width: 300px;
+        height: 300px;
+        background: #06b6d4;
+        top: 40%;
+        left: 50%;
+        animation-delay: -8s;
+      }
+
+      @keyframes floatOrb {
+        0%,
+        100% {
+          transform: translate(0, 0) scale(1);
+        }
+        33% {
+          transform: translate(40px, -30px) scale(1.05);
+        }
+        66% {
+          transform: translate(-20px, 40px) scale(0.95);
+        }
+      }
+
+      /* Grid stars */
+      .stars {
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.5) 1px,
+          transparent 1px
+        );
+        background-size: 50px 50px;
+        opacity: 0.07;
+      }
+
+      /* ── App Shell ──────────────────────────────── */
+      #app {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ── Header ─────────────────────────────────── */
+      header {
+        padding: 0 24px;
+        height: 72px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        backdrop-filter: blur(24px);
+        background: rgba(6, 11, 24, 0.8);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .logo-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+      }
+      .logo-text span {
+        color: var(--primary-l);
+      }
+      .header-badge {
+        font-size: 0.7rem;
+        padding: 3px 8px;
+        border-radius: 20px;
+        background: rgba(99, 102, 241, 0.2);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        color: var(--primary-l);
+        font-weight: 500;
+      }
+
+      /* ── Nav Tabs ────────────────────────────────── */
+      nav.main-nav {
+        display: flex;
+        gap: 4px;
+        padding: 16px 24px 0;
+        border-bottom: 1px solid var(--border);
+        background: rgba(6, 11, 24, 0.6);
+        backdrop-filter: blur(12px);
+      }
+      .nav-tab {
+        padding: 10px 20px;
+        border-radius: var(--radius) var(--radius) 0 0;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        border: 1px solid transparent;
+        border-bottom: none;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: transparent;
+        position: relative;
+        bottom: -1px;
+      }
+      .nav-tab:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .nav-tab.active {
+        color: var(--text);
+        background: rgba(99, 102, 241, 0.1);
+        border-color: var(--border);
+        border-bottom-color: var(--bg-dark);
+        backdrop-filter: blur(12px);
+      }
+      .nav-tab .tab-badge {
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 10px;
+        background: var(--primary);
+        color: #fff;
+        font-size: 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+      }
+
+      /* ── Main Content ─────────────────────────────── */
+      main {
+        flex: 1;
+        padding: 28px 24px;
+        max-width: 1100px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      .tab-content {
+        display: none;
+        animation: fadeInUp 0.4s ease both;
+      }
+      .tab-content.active {
+        display: block;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ── Card ─────────────────────────────────────── */
+      .card {
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 28px;
+        box-shadow: var(--shadow);
+      }
+      .card-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .card-title i {
+        color: var(--primary-l);
+      }
+
+      /* ── Step Progress ──────────────────────────── */
+      .step-progress {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin-bottom: 32px;
+      }
+      .step-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        flex: 1;
+        position: relative;
+      }
+      .step-item:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        top: 18px;
+        left: 50%;
+        width: 100%;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.1);
+        z-index: 0;
+        transition: background var(--transition);
+      }
+      .step-item.done:not(:last-child)::after {
+        background: var(--primary);
+      }
+      .step-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        z-index: 1;
+        background: var(--bg-dark);
+        color: var(--text-muted);
+        transition: all var(--transition);
+      }
+      .step-item.active .step-circle {
+        border-color: var(--primary);
+        background: var(--primary);
+        color: #fff;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25);
+      }
+      .step-item.done .step-circle {
+        border-color: var(--primary);
+        background: var(--primary);
+        color: #fff;
+      }
+      .step-label {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        white-space: nowrap;
+        transition: color var(--transition);
+      }
+      .step-item.active .step-label,
+      .step-item.done .step-label {
+        color: var(--text);
+      }
+
+      /* ── Form Steps ─────────────────────────────── */
+      .form-step {
+        display: none;
+        animation: slideInRight 0.35s ease both;
+      }
+      .form-step.active {
+        display: block;
+      }
+      .form-step.slide-out {
+        animation: slideOutLeft 0.3s ease both;
+      }
+
+      @keyframes slideInRight {
+        from {
+          opacity: 0;
+          transform: translateX(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      @keyframes slideOutLeft {
+        from {
+          opacity: 1;
+          transform: translateX(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateX(-30px);
+        }
+      }
+      @keyframes slideInLeft {
+        from {
+          opacity: 0;
+          transform: translateX(-30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      /* ── Form Fields ─────────────────────────────── */
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .form-group label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .form-group label i {
+        color: var(--primary-l);
+        font-size: 0.75rem;
+      }
+      .form-control {
+        padding: 12px 16px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1.5px solid rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 0.95rem;
+        transition: all var(--transition);
+        outline: none;
+        -webkit-appearance: none;
+      }
+      .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.25);
+      }
+      .form-control:focus {
+        border-color: var(--primary);
+        background: rgba(99, 102, 241, 0.08);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+      }
+      select.form-control {
+        cursor: pointer;
+      }
+      select.form-control option {
+        background: #1e1b4b;
+        color: #fff;
+      }
+
+      /* BMI display */
+      .bmi-display {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 18px;
+        background: rgba(99, 102, 241, 0.1);
+        border: 1.5px solid rgba(99, 102, 241, 0.25);
+        border-radius: 12px;
+        transition: all var(--transition);
+      }
+      .bmi-value {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(135deg, var(--primary-l), var(--cyan));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        min-width: 70px;
+      }
+      .bmi-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+      }
+      .bmi-category {
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+
+      /* ── Checkbox Cards ─────────────────────────── */
+      .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .checkbox-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 14px 16px;
+        border: 1.5px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all var(--transition);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .checkbox-card:hover {
+        border-color: rgba(99, 102, 241, 0.4);
+        background: rgba(99, 102, 241, 0.06);
+      }
+      .checkbox-card input[type="checkbox"] {
+        display: none;
+      }
+      .checkbox-card .cb-icon {
+        width: 22px;
+        height: 22px;
+        min-width: 22px;
+        border-radius: 6px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        transition: all var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 1px;
+      }
+      .checkbox-card.checked {
+        border-color: var(--primary);
+        background: rgba(99, 102, 241, 0.1);
+      }
+      .checkbox-card.checked .cb-icon {
+        background: var(--primary);
+        border-color: var(--primary);
+      }
+      .checkbox-card.checked .cb-icon::after {
+        content: "\2713";
+        color: #fff;
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+      .checkbox-card .cb-text {
+        flex: 1;
+      }
+      .checkbox-card .cb-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        line-height: 1.3;
+      }
+      .checkbox-card .cb-desc {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-top: 3px;
+      }
+
+      /* Sub-fields */
+      .sub-field {
+        display: none;
+        padding: 12px;
+        margin-top: 8px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        border-left: 3px solid var(--primary);
+      }
+      .sub-field.visible {
+        display: block;
+        animation: fadeInUp 0.2s ease;
+      }
+
+      /* ── Buttons ─────────────────────────────────── */
+      .btn {
+        padding: 13px 28px;
+        border-radius: 12px;
+        font-family: inherit;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all var(--transition);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 28px rgba(99, 102, 241, 0.5);
+      }
+      .btn-primary:active {
+        transform: translateY(0);
+      }
+      .btn-ghost {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      .btn-ghost:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .btn-danger {
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+      .btn-danger:hover {
+        background: rgba(239, 68, 68, 0.25);
+      }
+
+      .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 28px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+      }
+
+      /* ── Loading Button ─────────────────────────── */
+      .btn.loading {
+        pointer-events: none;
+        opacity: 0.7;
+      }
+      .btn.loading .btn-text {
+        display: none;
+      }
+      .btn .spinner {
+        display: none;
+      }
+      .btn.loading .spinner {
+        display: inline-block;
+      }
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── Result Card ─────────────────────────────── */
+      .result-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(8px);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .result-overlay.show {
+        display: flex;
+        animation: fadeIn 0.3s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .result-modal {
+        background: linear-gradient(160deg, #0d1b3e, #1a0a2e);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 40px 36px;
+        max-width: 560px;
+        width: 100%;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+        animation: zoomIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        position: relative;
+        overflow: hidden;
+      }
+      @keyframes zoomIn {
+        from {
+          opacity: 0;
+          transform: scale(0.8);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      .result-modal::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 24px;
+        background: radial-gradient(
+          circle at 50% -20%,
+          var(--result-color, #6366f1) 0%,
+          transparent 65%
+        );
+        opacity: 0.15;
+        pointer-events: none;
+      }
+
+      .result-icon-wrap {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.06);
+        border: 2px solid var(--result-color, #6366f1);
+        font-size: 2.5rem;
+        box-shadow:
+          0 0 0 12px rgba(255, 255, 255, 0.03),
+          0 0 40px var(--result-color, #6366f1);
+        animation: pulseBorder 2s ease-in-out infinite;
+      }
+      @keyframes pulseBorder {
+        0%,
+        100% {
+          box-shadow:
+            0 0 0 12px rgba(255, 255, 255, 0.03),
+            0 0 40px var(--result-color, #6366f1);
+        }
+        50% {
+          box-shadow:
+            0 0 0 18px rgba(255, 255, 255, 0.01),
+            0 0 60px var(--result-color, #6366f1);
+        }
+      }
+
+      .result-risk-label {
+        text-align: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--result-color, #6366f1);
+        margin-bottom: 6px;
+        opacity: 0.9;
+      }
+      .result-risk-level {
+        text-align: center;
+        font-size: 2.2rem;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 4px;
+      }
+      .result-risk-en {
+        text-align: center;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+      }
+      .result-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 20px 0;
+      }
+
+      .result-detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .result-detail-item {
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 12px;
+        padding: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .result-detail-item .rdl {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+      }
+      .result-detail-item .rdv {
+        font-size: 1.1rem;
+        font-weight: 700;
+      }
+
+      .result-factors {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        padding: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        margin-bottom: 20px;
+      }
+      .result-factors .fac-title {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+      }
+      .factor-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        margin: 3px;
+        font-size: 0.78rem;
+        font-weight: 500;
+        background: rgba(99, 102, 241, 0.15);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        color: var(--primary-l);
+      }
+
+      .result-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+      .result-close-btn {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+      }
+      .result-close-btn button {
+        background: rgba(255, 255, 255, 0.08);
+        border: none;
+        color: var(--text-muted);
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: var(--transition);
+      }
+      .result-close-btn button:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: var(--text);
+      }
+
+      /* ── Risk Badge ─────────────────────────────── */
+      .risk-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+      .risk-none {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+      .risk-low {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+      .risk-mod {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+      .risk-high {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+
+      /* ── Table ───────────────────────────────────── */
+      .table-wrapper {
+        overflow-x: auto;
+        border-radius: 12px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 720px;
+      }
+      thead tr {
+        border-bottom: 1px solid var(--border);
+      }
+      thead th {
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+      }
+      tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        transition: background var(--transition);
+      }
+      tbody tr:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+      tbody td {
+        padding: 14px 16px;
+        font-size: 0.875rem;
+      }
+
+      /* ── Stats Cards ─────────────────────────────── */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+      .stat-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        text-align: center;
+        transition: all var(--transition);
+      }
+      .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow);
+      }
+      .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(
+          135deg,
+          var(--color-a, #fff),
+          var(--color-b, #888)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .stat-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 6px;
+      }
+
+      /* Search + Filter Bar */
+      .search-bar {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .search-input-wrap {
+        position: relative;
+        flex: 1;
+        min-width: 200px;
+      }
+      .search-input-wrap i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+      }
+      .search-input-wrap input {
+        width: 100%;
+        padding: 11px 16px 11px 40px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1.5px solid rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        font-size: 0.9rem;
+        font-family: inherit;
+        outline: none;
+        transition: all var(--transition);
+      }
+      .search-input-wrap input:focus {
+        border-color: var(--primary);
+        background: rgba(99, 102, 241, 0.08);
+      }
+      .search-input-wrap input::placeholder {
+        color: rgba(255, 255, 255, 0.3);
+      }
+
+      /* Empty state */
+      .empty-state {
+        text-align: center;
+        padding: 64px 20px;
+      }
+      .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 16px;
+        opacity: 0.3;
+      }
+      .empty-text {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+
+      /* Toast notification */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 300;
+        padding: 14px 20px;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        backdrop-filter: blur(12px);
+        border: 1px solid;
+        animation: slideInRight2 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        max-width: 320px;
+      }
+      .toast-success {
+        background: rgba(16, 185, 129, 0.15);
+        border-color: rgba(16, 185, 129, 0.3);
+        color: #34d399;
+      }
+      .toast-error {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #f87171;
+      }
+      @keyframes slideInRight2 {
+        from {
+          opacity: 0;
+          transform: translateX(100%);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      /* ── Responsive ──────────────────────────────── */
+      @media (max-width: 640px) {
+        header {
+          padding: 0 16px;
+        }
+        main {
+          padding: 16px;
+        }
+        nav.main-nav {
+          padding: 12px 16px 0;
+          gap: 2px;
+        }
+        .nav-tab {
+          padding: 8px 12px;
+          font-size: 0.8rem;
+        }
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+        .result-modal {
+          padding: 28px 20px;
+        }
+        .result-detail-grid {
+          grid-template-columns: 1fr;
+        }
+        .form-actions {
+          flex-direction: column;
+          gap: 10px;
+        }
+        .form-actions .btn {
+          width: 100%;
+          justify-content: center;
+        }
+        .stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .logo-text {
+          display: none;
+        }
+      }
+
+      /* Divider */
+      .section-divider {
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--border),
+          transparent
+        );
+        margin: 24px 0;
+      }
+
+      /* ── Chart bar ───────────────────────────────── */
+      .mini-bar {
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.07);
+        margin: 6px 0;
+      }
+      .mini-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.03);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.22);
+      }
+
+      /* ── Intro / Splash Screen ───────────────────── */
+      #intro-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background:
+          radial-gradient(
+            ellipse 90% 70% at 30% 20%,
+            #1e1b4b 0%,
+            transparent 55%
+          ),
+          radial-gradient(
+            ellipse 60% 60% at 75% 90%,
+            #12032e 0%,
+            transparent 55%
+          ),
+          linear-gradient(160deg, #060b18 0%, #0d1b3e 45%, #1a0a2e 100%);
+        overflow: hidden;
+        transition:
+          opacity 0.7s ease,
+          transform 0.7s ease;
+      }
+      #intro-screen.fade-out {
+        opacity: 0;
+        transform: scale(1.04);
+        pointer-events: none;
+      }
+
+      /* particles */
+      .intro-bg-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        pointer-events: none;
+      }
+      .intro-orb-1 {
+        width: 600px;
+        height: 600px;
+        background: #6366f1;
+        opacity: 0.12;
+        top: -200px;
+        left: -150px;
+        animation: floatOrb 14s ease-in-out infinite;
+      }
+      .intro-orb-2 {
+        width: 450px;
+        height: 450px;
+        background: #8b5cf6;
+        opacity: 0.1;
+        bottom: -150px;
+        right: -100px;
+        animation: floatOrb 10s ease-in-out infinite reverse;
+      }
+      .intro-orb-3 {
+        width: 280px;
+        height: 280px;
+        background: #06b6d4;
+        opacity: 0.08;
+        top: 40%;
+        left: 55%;
+        animation: floatOrb 12s ease-in-out infinite 3s;
+      }
+
+      .intro-grid-lines {
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(99, 102, 241, 0.06) 1px, transparent 1px);
+        background-size: 60px 60px;
+        mask-image: radial-gradient(
+          ellipse 80% 80% at 50% 50%,
+          black 40%,
+          transparent 100%
+        );
+      }
+
+      /* Center content */
+      .intro-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        text-align: center;
+        padding: 0 20px;
+      }
+
+      .intro-badge {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--primary-l);
+        padding: 6px 16px;
+        border-radius: 20px;
+        background: rgba(99, 102, 241, 0.12);
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        margin-bottom: 32px;
+        animation: fadeInUp 0.6s ease 0.1s both;
+      }
+
+      .intro-icon-ring {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin-bottom: 32px;
+        animation: fadeInUp 0.6s ease 0.2s both;
+      }
+      .intro-icon-ring .ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        animation: spinRing 6s linear infinite;
+      }
+      .intro-icon-ring .ring-1 {
+        border-top-color: rgba(99, 102, 241, 0.6);
+        border-right-color: rgba(99, 102, 241, 0.2);
+      }
+      .intro-icon-ring .ring-2 {
+        inset: 10px;
+        border-bottom-color: rgba(139, 92, 246, 0.6);
+        border-left-color: rgba(139, 92, 246, 0.2);
+        animation-direction: reverse;
+        animation-duration: 4s;
+      }
+      .intro-icon-ring .ring-3 {
+        inset: 22px;
+        border-top-color: rgba(6, 182, 212, 0.5);
+        animation-duration: 8s;
+      }
+      .intro-icon-inner {
+        position: absolute;
+        inset: 28px;
+        background: linear-gradient(
+          135deg,
+          rgba(99, 102, 241, 0.25),
+          rgba(139, 92, 246, 0.25)
+        );
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        box-shadow:
+          0 0 30px rgba(99, 102, 241, 0.3),
+          inset 0 0 20px rgba(99, 102, 241, 0.1);
+      }
+      @keyframes spinRing {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .intro-title {
+        font-size: clamp(2rem, 6vw, 3.5rem);
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        margin-bottom: 8px;
+        animation: fadeInUp 0.6s ease 0.3s both;
+      }
+      .intro-title .highlight {
+        background: linear-gradient(135deg, #818cf8, #c084fc, #06b6d4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .intro-title .sup-r {
+        font-size: 0.45em;
+        vertical-align: super;
+        -webkit-text-fill-color: #818cf8;
+      }
+
+      .intro-subtitle {
+        font-size: clamp(1rem, 3vw, 1.35rem);
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 10px;
+        animation: fadeInUp 0.6s ease 0.4s both;
+      }
+
+      .intro-desc {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        line-height: 1.7;
+        max-width: 480px;
+        margin-bottom: 40px;
+        animation: fadeInUp 0.6s ease 0.5s both;
+      }
+
+      /* Feature pills */
+      .intro-features {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        margin-bottom: 40px;
+        animation: fadeInUp 0.6s ease 0.55s both;
+      }
+      .intro-feature-pill {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-muted);
+        transition: all 0.25s ease;
+      }
+      .intro-feature-pill i {
+        color: var(--primary-l);
+        font-size: 0.75rem;
+      }
+
+      /* Enter button */
+      .intro-enter-btn {
+        position: relative;
+        overflow: hidden;
+        padding: 16px 48px;
+        border-radius: 14px;
+        border: none;
+        font-family: inherit;
+        font-size: 1.05rem;
+        font-weight: 700;
+        cursor: pointer;
+        color: #fff;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        box-shadow: 0 8px 32px rgba(99, 102, 241, 0.45);
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.6s ease 0.65s both;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .intro-enter-btn::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.15),
+          transparent
+        );
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .intro-enter-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 40px rgba(99, 102, 241, 0.6);
+      }
+      .intro-enter-btn:hover::before {
+        opacity: 1;
+      }
+      .intro-enter-btn:active {
+        transform: translateY(-1px);
+      }
+      .intro-enter-btn .arrow-icon {
+        display: inline-flex;
+        transition: transform 0.3s ease;
+      }
+      .intro-enter-btn:hover .arrow-icon {
+        transform: translateX(4px);
+      }
+
+      /* Shimmer sweep on button */
+      .intro-enter-btn::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 60%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        animation: shimmer 3s ease-in-out infinite 1.5s;
+      }
+      @keyframes shimmer {
+        0% {
+          left: -100%;
+        }
+        60%,
+        100% {
+          left: 150%;
+        }
+      }
+
+      .intro-version {
+        margin-top: 24px;
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        opacity: 0.5;
+        animation: fadeInUp 0.6s ease 0.75s both;
+      }
+
+      /* Bottom bar info */
+      .intro-bottom-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 32px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(8px);
+        animation: fadeIn 0.8s ease 1s both;
+      }
+      .intro-bottom-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.78rem;
+        color: var(--text-muted);
+      }
+      .intro-bottom-item i {
+        color: var(--primary-l);
+      }
+
+      @media (max-width: 480px) {
+        .intro-bottom-bar {
+          gap: 16px;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+        .intro-features {
+          display: none;
+        }
+        .intro-enter-btn {
+          padding: 14px 36px;
+          font-size: 0.95rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ══════════════════════════════════════════
+     INTRO / SPLASH SCREEN
+══════════════════════════════════════════ -->
+    <div id="intro-screen">
+      <!-- Background decoration -->
+      <div class="intro-bg-orb intro-orb-1"></div>
+      <div class="intro-bg-orb intro-orb-2"></div>
+      <div class="intro-bg-orb intro-orb-3"></div>
+      <div class="intro-grid-lines"></div>
+
+      <!-- Center Content -->
+      <div class="intro-content">
+        <div class="intro-badge">
+          <i class="fas fa-hospital-symbol"></i>&nbsp; SmartLab Medical System
+        </div>
+
+        <!-- Animated icon -->
+        <div class="intro-icon-ring">
+          <div class="ring ring-1"></div>
+          <div class="ring ring-2"></div>
+          <div class="ring ring-3"></div>
+          <div class="intro-icon-inner"><i class="fas fa-bone"></i></div>
+        </div>
+
+        <div class="intro-title">
+          <span class="highlight">FRAX<span class="sup-r">®</span></span> Tool
+        </div>
+
+        <div class="intro-subtitle">
+          ระบบเก็บข้อมูลและคัดกรองความเสี่ยงกระดูกหัก
+        </div>
+
+        <div class="intro-desc">
+          ประเมินความเสี่ยงการเกิดกระดูกหักในผู้ป่วย โดยอิงตามหลักเกณฑ์ FRAX®
+          ครอบคลุมตั้งแต่การกรอกข้อมูล การคำนวณระดับความเสี่ยง
+          และการบันทึกในฐานข้อมูลสำหรับใช้งานทางคลินิก
+        </div>
+
+        <div class="intro-features">
+          <div class="intro-feature-pill">
+            <i class="fas fa-shield-alt"></i> ประเมินความเสี่ยง FRAX®
+          </div>
+          <div class="intro-feature-pill">
+            <i class="fas fa-database"></i> บันทึกฐานข้อมูลผู้ป่วย
+          </div>
+          <div class="intro-feature-pill">
+            <i class="fas fa-chart-pie"></i> สถิติและรายงาน
+          </div>
+          <div class="intro-feature-pill">
+            <i class="fas fa-mobile-alt"></i> รองรับ Mobile
+          </div>
+        </div>
+
+        <button class="intro-enter-btn" onclick="enterApp()">
+          เข้าสู่ระบบ
+          <span class="arrow-icon"><i class="fas fa-arrow-right"></i></span>
+        </button>
+
+        <div class="intro-version">v1.0.0 · สงวนสิทธิ์ SmartLab © 2026</div>
+      </div>
+
+      <!-- Bottom info bar -->
+      <div class="intro-bottom-bar">
+        <div class="intro-bottom-item">
+          <i class="fas fa-lock"></i> ข้อมูลปลอดภัย
+        </div>
+        <div class="intro-bottom-item">
+          <i class="fas fa-user-md"></i> สำหรับบุคลากรทางการแพทย์
+        </div>
+        <div class="intro-bottom-item">
+          <i class="fas fa-wifi"></i> ระบบออนไลน์
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-scene">
+      <div class="stars"></div>
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
+
+    <div id="app">
+      <!-- ── Header ─── -->
+      <header>
+        <div class="logo">
+          <div class="logo-icon"><i class="fas fa-bone"></i></div>
+          <div class="logo-text">
+            <span>FRAX</span><sup style="font-size: 0.55em">®</sup> Tool
+          </div>
+          <div class="header-badge">SmartLab</div>
+        </div>
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+          "
+        >
+          <i
+            class="fas fa-circle"
+            style="font-size: 0.5rem; color: #10b981"
+          ></i>
+          ระบบออนไลน์
+          <button
+            onclick="backToIntro()"
+            style="
+              margin-left: 16px;
+              padding: 7px 14px;
+              border-radius: 20px;
+              border: 1px solid rgba(255,255,255,0.15);
+              background: rgba(255,255,255,0.07);
+              color: var(--text-muted);
+              font-size: 0.78rem;
+              font-family: inherit;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              transition: background 0.2s, color 0.2s;
+            "
+            onmouseover="this.style.background='rgba(255,255,255,0.13)';this.style.color='var(--text)'"
+            onmouseout="this.style.background='rgba(255,255,255,0.07)';this.style.color='var(--text-muted)'"
+          >
+            <i class="fas fa-home"></i> หน้าหลัก
+          </button>
+        </div>
+      </header>
+
+      <!-- ── Nav ─── -->
+      <nav class="main-nav">
+        <div
+          class="nav-tab active"
+          data-tab="form"
+          onclick="switchTab('form', this)"
+        >
+          <i class="fas fa-clipboard-list"></i> ประเมินความเสี่ยง
+        </div>
+        <div
+          class="nav-tab"
+          data-tab="records"
+          onclick="switchTab('records', this)"
+        >
+          <i class="fas fa-users"></i> ประวัติผู้ป่วย
+          <span class="tab-badge" id="recordsBadge">0</span>
+        </div>
+        <div
+          class="nav-tab"
+          data-tab="stats"
+          onclick="switchTab('stats', this)"
+        >
+          <i class="fas fa-chart-bar"></i> สถิติ
+        </div>
+      </nav>
+
+      <!-- ── Main ─── -->
+      <main>
+        <!-- ════════════════════════════════════════
+         TAB 1: Form
+    ════════════════════════════════════════ -->
+        <div class="tab-content active" id="tab-form">
+          <div class="card">
+            <div class="card-title">
+              <i class="fas fa-stethoscope"></i>
+              กรอกข้อมูลคัดกรองความเสี่ยงกระดูกหัก (FRAX®)
+            </div>
+
+            <!-- Step Progress -->
+            <div class="step-progress">
+              <div class="step-item active" id="stepDot1">
+                <div class="step-circle">1</div>
+                <div class="step-label">ข้อมูลพื้นฐาน</div>
+              </div>
+              <div class="step-item" id="stepDot2">
+                <div class="step-circle">2</div>
+                <div class="step-label">ปัจจัยเสี่ยง</div>
+              </div>
+              <div class="step-item" id="stepDot3">
+                <div class="step-circle">3</div>
+                <div class="step-label">BMD &amp; สรุป</div>
+              </div>
+            </div>
+
+            <form id="fraxForm" onsubmit="submitForm(event)">
+              <!-- ─── Step 1 ─── -->
+              <div class="form-step active" id="step1">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label><i class="fas fa-user"></i>ชื่อ</label>
+                    <input
+                      class="form-control"
+                      id="first_name"
+                      placeholder="ชื่อ"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label><i class="fas fa-user"></i>นามสกุล</label>
+                    <input
+                      class="form-control"
+                      id="last_name"
+                      placeholder="นามสกุล"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label><i class="fas fa-birthday-cake"></i>อายุ (ปี)</label>
+                    <input
+                      class="form-control"
+                      id="age"
+                      type="number"
+                      min="1"
+                      max="120"
+                      placeholder="เช่น 65"
+                      required
+                      oninput="updateBMI()"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label><i class="fas fa-venus-mars"></i>เพศ</label>
+                    <select class="form-control" id="gender" required>
+                      <option value="" disabled selected>-- เลือกเพศ --</option>
+                      <option value="ชาย">ชาย</option>
+                      <option value="หญิง">หญิง</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label
+                      ><i class="fas fa-ruler-vertical"></i>ส่วนสูง (ซม.)</label
+                    >
+                    <input
+                      class="form-control"
+                      id="height"
+                      type="number"
+                      min="50"
+                      max="250"
+                      step="0.1"
+                      placeholder="เช่น 165"
+                      required
+                      oninput="updateBMI()"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label><i class="fas fa-weight"></i>น้ำหนัก (กก.)</label>
+                    <input
+                      class="form-control"
+                      id="weight"
+                      type="number"
+                      min="1"
+                      max="300"
+                      step="0.1"
+                      placeholder="เช่น 55"
+                      required
+                      oninput="updateBMI()"
+                    />
+                  </div>
+                </div>
+
+                <!-- BMI Live -->
+                <div style="margin-top: 20px">
+                  <div class="bmi-display" id="bmiDisplay" style="opacity: 0.4">
+                    <div>
+                      <div class="bmi-value" id="bmiValue">—</div>
+                      <div class="bmi-label">ดัชนีมวลกาย (BMI)</div>
+                    </div>
+                    <div style="flex: 1">
+                      <div class="bmi-category" id="bmiCategory">
+                        กรุณากรอกส่วนสูงและน้ำหนัก
+                      </div>
+                      <div id="bmiBar" class="mini-bar" style="margin-top: 8px">
+                        <div
+                          class="mini-bar-fill"
+                          id="bmiBarFill"
+                          style="width: 0%; background: var(--primary)"
+                        ></div>
+                      </div>
+                      <div
+                        style="
+                          font-size: 0.72rem;
+                          color: var(--text-muted);
+                          margin-top: 4px;
+                        "
+                      >
+                        ≤18.5 ต่ำ · 18.5–24.9 ปกติ · 25–29.9 เกิน · ≥30 อ้วน
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <div></div>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="goStep(2)"
+                  >
+                    ถัดไป <i class="fas fa-arrow-right"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- ─── Step 2 ─── -->
+              <div class="form-step" id="step2">
+                <p
+                  style="
+                    font-size: 0.85rem;
+                    color: var(--text-muted);
+                    margin-bottom: 20px;
+                  "
+                >
+                  <i
+                    class="fas fa-info-circle"
+                    style="color: var(--primary-l)"
+                  ></i>
+                  เลือกข้อที่ตรงกับประวัติและสภาวะของผู้ป่วย
+                </p>
+
+                <div
+                  style="
+                    font-size: 0.78rem;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: var(--text-muted);
+                    margin-bottom: 12px;
+                  "
+                >
+                  ประวัติกระดูก
+                </div>
+                <div class="checkbox-group">
+                  <label class="checkbox-card" id="cbFragility">
+                    <input
+                      type="checkbox"
+                      id="fragility_fracture"
+                      onchange="
+                        toggleCheckCard(this);
+                        toggleSubField('fractureSub', this.checked);
+                      "
+                    />
+                    <div class="cb-icon"></div>
+                    <div class="cb-text">
+                      <div class="cb-title">
+                        เคยกระดูกหักจากแรงกระแทกต่ำ (Fragility Fracture)
+                      </div>
+                      <div class="cb-desc">
+                        เช่น ล้มระดับยืน เดินสะดุด → ถือเป็น High Risk ทันที
+                      </div>
+                    </div>
+                  </label>
+                  <div class="sub-field" id="fractureSub">
+                    <label
+                      style="
+                        font-size: 0.8rem;
+                        color: var(--text-muted);
+                        display: block;
+                        margin-bottom: 6px;
+                      "
+                      >ตำแหน่งที่หัก</label
+                    >
+                    <input
+                      class="form-control"
+                      id="fracture_location"
+                      placeholder="เช่น ข้อมือ, สะโพก, กระดูกสันหลัง"
+                    />
+                  </div>
+
+                  <label class="checkbox-card" id="cbParent">
+                    <input
+                      type="checkbox"
+                      id="parent_hip_fracture"
+                      onchange="toggleCheckCard(this)"
+                    />
+                    <div class="cb-icon"></div>
+                    <div class="cb-text">
+                      <div class="cb-title">พ่อหรือแม่เคยกระดูกสะโพกหัก</div>
+                      <div class="cb-desc">
+                        ประวัติกระดูกสะโพกหักในพ่อหรือแม่ → เพิ่มความเสี่ยง
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="section-divider"></div>
+                <div
+                  style="
+                    font-size: 0.78rem;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: var(--text-muted);
+                    margin-bottom: 12px;
+                  "
+                >
+                  ปัจจัยเสี่ยง FRAX
+                  <span
+                    id="fraxCounter"
+                    style="
+                      margin-left: 8px;
+                      padding: 2px 8px;
+                      border-radius: 12px;
+                      background: rgba(99, 102, 241, 0.2);
+                      color: var(--primary-l);
+                      font-size: 0.7rem;
+                    "
+                  >
+                    0 / 4 ข้อ
+                  </span>
+                </div>
+                <div class="checkbox-group">
+                  <label class="checkbox-card" id="cbSmoke">
+                    <input
+                      type="checkbox"
+                      id="smoking"
+                      onchange="
+                        toggleCheckCard(this);
+                        updateFraxCount();
+                      "
+                    />
+                    <div class="cb-icon"></div>
+                    <div class="cb-text">
+                      <div class="cb-title">สูบบุหรี่ในปัจจุบัน</div>
+                      <div class="cb-desc">สูบบุหรี่อยู่ในปัจจุบัน</div>
+                    </div>
+                  </label>
+
+                  <label class="checkbox-card" id="cbAlcohol">
+                    <input
+                      type="checkbox"
+                      id="alcohol"
+                      onchange="
+                        toggleCheckCard(this);
+                        updateFraxCount();
+                      "
+                    />
+                    <div class="cb-icon"></div>
+                    <div class="cb-text">
+                      <div class="cb-title">ดื่มแอลกอฮอล์ ≥ 3 แก้ว/วัน</div>
+                      <div class="cb-desc">
+                        ดื่มแอลกอฮอล์ตั้งแต่ 3 หน่วยมาตรฐานต่อวันหรือมากกว่า
+                      </div>
+                    </div>
+                  </label>
+
+                  <label class="checkbox-card" id="cbSteroid">
+                    <input
+                      type="checkbox"
+                      id="steroid_use"
+                      onchange="
+                        toggleCheckCard(this);
+                        toggleSubField('steroidSub', this.checked);
+                        updateFraxCount();
+                      "
+                    />
+                    <div class="cb-icon"></div>
+                    <div class="cb-text">
+                      <div class="cb-title">
+                        ใช้ยาสเตียรอยด์ต่อเนื่อง ≥ 3 เดือน
+                      </div>
+                      <div class="cb-desc">
+                        Prednisolone, Dexamethasone หรือยาสเตียรอยด์ชนิดใดก็ได้
+                      </div>
+                    </div>
+                  </label>
+                  <div class="sub-field" id="steroidSub">
+                    <label
+                      style="
+                        font-size: 0.8rem;
+                        color: var(--text-muted);
+                        display: block;
+                        margin-bottom: 6px;
+                      "
+                      >ชื่อยา/ขนาด</label
+                    >
+                    <input
+                      class="form-control"
+                      id="steroid_name"
+                      placeholder="เช่น Prednisolone 5 mg/day"
+                    />
+                  </div>
+
+                  <label class="checkbox-card" id="cbSecOsteo">
+                    <input
+                      type="checkbox"
+                      id="secondary_osteoporosis"
+                      onchange="
+                        toggleCheckCard(this);
+                        toggleSubField('secOsteoSub', this.checked);
+                        updateFraxCount();
+                      "
+                    />
+                    <div class="cb-icon"></div>
+                    <div class="cb-text">
+                      <div class="cb-title">
+                        มีโรคที่ทำให้กระดูกพรุนทุติยภูมิ
+                      </div>
+                      <div class="cb-desc">
+                        RA, Hyperthyroid, CKD, Malabsorption หรือโรคอื่นๆ
+                      </div>
+                    </div>
+                  </label>
+                  <div class="sub-field" id="secOsteoSub">
+                    <label
+                      style="
+                        font-size: 0.8rem;
+                        color: var(--text-muted);
+                        display: block;
+                        margin-bottom: 6px;
+                      "
+                      >ระบุโรค</label
+                    >
+                    <input
+                      class="form-control"
+                      id="secondary_osteoporosis_detail"
+                      placeholder="เช่น RA, Hyperthyroid"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button
+                    type="button"
+                    class="btn btn-ghost"
+                    onclick="goStep(1)"
+                  >
+                    <i class="fas fa-arrow-left"></i> ย้อนกลับ
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="goStep(3)"
+                  >
+                    ถัดไป <i class="fas fa-arrow-right"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- ─── Step 3 ─── -->
+              <div class="form-step" id="step3">
+                <div
+                  style="
+                    font-size: 0.78rem;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: var(--text-muted);
+                    margin-bottom: 14px;
+                  "
+                >
+                  ผลการวัดความหนาแน่นกระดูก (BMD) — ถ้ามี
+                </div>
+
+                <label
+                  class="checkbox-card"
+                  id="cbBMD"
+                  style="margin-bottom: 14px"
+                >
+                  <input
+                    type="checkbox"
+                    id="has_bmd"
+                    onchange="
+                      toggleCheckCard(this);
+                      toggleSubField('bmdSub', this.checked);
+                    "
+                  />
+                  <div class="cb-icon"></div>
+                  <div class="cb-text">
+                    <div class="cb-title">
+                      มีผล BMD (Bone Mineral Density)
+                    </div>
+                    <div class="cb-desc">เลือกหากผู้ป่วยมีผล DXA หรือ BMD</div>
+                  </div>
+                </label>
+                <div class="sub-field" id="bmdSub">
+                  <label
+                    style="
+                      font-size: 0.8rem;
+                      color: var(--text-muted);
+                      display: block;
+                      margin-bottom: 8px;
+                    "
+                    >ผล BMD</label
+                  >
+                  <select class="form-control" id="bmd_result">
+                    <option value="">-- เลือกผล --</option>
+                    <option value="normal">ปกติ (Normal)</option>
+                    <option value="osteopenia_mild">Osteopenia เล็กน้อย</option>
+                    <option value="osteopenia">Osteopenia ชัดเจน</option>
+                    <option value="osteoporosis">Osteoporosis</option>
+                  </select>
+                </div>
+
+                <div class="section-divider"></div>
+                <div class="form-grid" style="margin-bottom: 20px">
+                  <div class="form-group">
+                    <label
+                      ><i class="fas fa-user-md"></i>ผู้บันทึก (ถ้ามี)</label
+                    >
+                    <input
+                      class="form-control"
+                      id="recorded_by"
+                      placeholder="ชื่อผู้บันทึก"
+                    />
+                  </div>
+                  <div class="form-group" style="grid-column: 1/-1">
+                    <label><i class="fas fa-sticky-note"></i>หมายเหตุ</label>
+                    <textarea
+                      class="form-control"
+                      id="notes"
+                      rows="3"
+                      placeholder="บันทึกเพิ่มเติม..."
+                      style="resize: vertical"
+                    ></textarea>
+                  </div>
+                </div>
+
+                <!-- Summary preview -->
+                <div
+                  style="
+                    background: rgba(99, 102, 241, 0.08);
+                    border: 1px solid rgba(99, 102, 241, 0.2);
+                    border-radius: 12px;
+                    padding: 16px;
+                    margin-bottom: 20px;
+                  "
+                >
+                  <div
+                    style="
+                      font-size: 0.78rem;
+                      color: var(--primary-l);
+                      font-weight: 600;
+                      margin-bottom: 12px;
+                    "
+                  >
+                    <i class="fas fa-eye"></i> ตัวอย่างข้อมูลที่จะบันทึก
+                  </div>
+                  <div
+                    id="summaryPreview"
+                    style="
+                      font-size: 0.85rem;
+                      color: var(--text-muted);
+                      line-height: 1.8;
+                    "
+                  ></div>
+                </div>
+
+                <div class="form-actions">
+                  <button
+                    type="button"
+                    class="btn btn-ghost"
+                    onclick="goStep(2)"
+                  >
+                    <i class="fas fa-arrow-left"></i> ย้อนกลับ
+                  </button>
+                  <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <span class="spinner"></span>
+                    <span class="btn-text"
+                      ><i class="fas fa-save"></i> บันทึกและประเมินผล</span
+                    >
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════
+         TAB 2: Records
+    ════════════════════════════════════════ -->
+        <div class="tab-content" id="tab-records">
+          <div class="search-bar">
+            <div class="search-input-wrap">
+              <i class="fas fa-search"></i>
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="ค้นหาชื่อ-นามสกุลผู้ป่วย..."
+                oninput="filterRecords()"
+              />
+            </div>
+            <select
+              class="form-control"
+              id="riskFilter"
+              style="width: auto"
+              onchange="filterRecords()"
+            >
+              <option value="">ทุกระดับความเสี่ยง</option>
+              <option value="ไม่มีความเสี่ยง">ไม่มีความเสี่ยง</option>
+              <option value="เสี่ยงต่ำ">เสี่ยงต่ำ</option>
+              <option value="เสี่ยงปานกลาง">เสี่ยงปานกลาง</option>
+              <option value="เสี่ยงสูง">เสี่ยงสูง</option>
+            </select>
+            <button
+              class="btn btn-ghost"
+              onclick="loadRecords()"
+              style="white-space: nowrap"
+            >
+              <i class="fas fa-sync-alt"></i> รีเฟรช
+            </button>
+          </div>
+
+          <div class="card" style="padding: 0; overflow: hidden">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>ชื่อ-นามสกุล</th>
+                    <th>อายุ</th>
+                    <th>เพศ</th>
+                    <th>BMI</th>
+                    <th>FRAX</th>
+                    <th>ระดับความเสี่ยง</th>
+                    <th>วันที่บันทึก</th>
+                    <th>จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="recordsTable">
+                  <tr>
+                    <td colspan="9">
+                      <div class="empty-state">
+                        <div class="empty-icon"><i class="fas fa-clipboard-list"></i></div>
+                        <div class="empty-text">กำลังโหลดข้อมูล...</div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════
+         TAB 3: Stats
+    ════════════════════════════════════════ -->
+        <div class="tab-content" id="tab-stats">
+          <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+              <div
+                class="stat-number"
+                style="--color-a: #818cf8; --color-b: #6366f1"
+                id="statTotal"
+              >
+                0
+              </div>
+              <div class="stat-label">ผู้ป่วยทั้งหมด</div>
+            </div>
+            <div class="stat-card">
+              <div
+                class="stat-number"
+                style="--color-a: #34d399; --color-b: #10b981"
+                id="statNoRisk"
+              >
+                0
+              </div>
+              <div class="stat-label">ไม่มีความเสี่ยง</div>
+            </div>
+            <div class="stat-card">
+              <div
+                class="stat-number"
+                style="--color-a: #60a5fa; --color-b: #3b82f6"
+                id="statLow"
+              >
+                0
+              </div>
+              <div class="stat-label">เสี่ยงต่ำ</div>
+            </div>
+            <div class="stat-card">
+              <div
+                class="stat-number"
+                style="--color-a: #fbbf24; --color-b: #f59e0b"
+                id="statMod"
+              >
+                0
+              </div>
+              <div class="stat-label">เสี่ยงปานกลาง</div>
+            </div>
+            <div class="stat-card">
+              <div
+                class="stat-number"
+                style="--color-a: #f87171; --color-b: #ef4444"
+                id="statHigh"
+              >
+                0
+              </div>
+              <div class="stat-label">เสี่ยงสูง</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <i class="fas fa-chart-pie"></i> สัดส่วนระดับความเสี่ยง
+            </div>
+            <div id="statsChart">
+              <div
+                style="
+                  padding: 40px;
+                  text-align: center;
+                  color: var(--text-muted);
+                "
+              >
+                กำลังโหลด...
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ── Result Modal ─── -->
+    <div class="result-overlay" id="resultOverlay">
+      <div class="result-modal" id="resultModal">
+        <div class="result-close-btn">
+          <button onclick="closeResult()"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="result-icon-wrap" id="resultIcon"><i class="fas fa-bone"></i></div>
+        <div class="result-risk-label" id="resultRiskLabel">
+          ระดับความเสี่ยง
+        </div>
+        <div class="result-risk-level" id="resultRiskLevel">—</div>
+        <div class="result-risk-en" id="resultRiskEn">—</div>
+
+        <div class="result-divider"></div>
+
+        <div class="result-detail-grid">
+          <div class="result-detail-item">
+            <div class="rdl">ชื่อผู้ป่วย</div>
+            <div class="rdv" id="rName">—</div>
+          </div>
+          <div class="result-detail-item">
+            <div class="rdl">อายุ / เพศ</div>
+            <div class="rdv" id="rAge">—</div>
+          </div>
+          <div class="result-detail-item">
+            <div class="rdl">BMI</div>
+            <div class="rdv" id="rBMI">—</div>
+          </div>
+          <div class="result-detail-item">
+            <div class="rdl">ปัจจัย FRAX</div>
+            <div class="rdv" id="rFrax">—</div>
+          </div>
+        </div>
+
+        <div class="result-factors" id="resultFactors">
+          <div class="fac-title">ปัจจัยเสี่ยงที่พบ</div>
+          <div id="resultFactorTags">—</div>
+        </div>
+
+        <div class="result-actions">
+          <button class="btn btn-ghost" onclick="closeResult()">
+            <i class="fas fa-check"></i> รับทราบ
+          </button>
+          <button
+            class="btn btn-ghost"
+            onclick="
+              switchTab('records', null);
+              closeResult();
+            "
+          >
+            <i class="fas fa-history"></i> ดูประวัติ
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Toast ─── -->
+    <div id="toastContainer"></div>
+
+    <script>
+      const API = ""; // same origin
+
+      // ─── Tab switching ───────────────────────────
+      function switchTab(name, el) {
+        document
+          .querySelectorAll(".tab-content")
+          .forEach((t) => t.classList.remove("active"));
+        document
+          .querySelectorAll(".nav-tab")
+          .forEach((t) => t.classList.remove("active"));
+        document.getElementById("tab-" + name).classList.add("active");
+        if (el) el.classList.add("active");
+        else
+          document
+            .querySelector(`[data-tab="${name}"]`)
+            .classList.add("active");
+        if (name === "records") loadRecords();
+        if (name === "stats") loadStats();
+      }
+
+      // ─── Step navigation ────────────────────────
+      let currentStep = 1;
+      function goStep(n) {
+        if (n > currentStep && !validateStep(currentStep)) return;
+        if (n === 3) updateSummaryPreview();
+
+        const cur = document.getElementById("step" + currentStep);
+        const next = document.getElementById("step" + n);
+
+        // Direction
+        if (n > currentStep) {
+          cur.style.animation = "slideOutLeft 0.3s ease both";
+          setTimeout(() => {
+            cur.classList.remove("active");
+            cur.style.animation = "";
+            next.style.animation = "slideInRight 0.35s ease both";
+            next.classList.add("active");
+          }, 280);
+        } else {
+          cur.style.animation = "none";
+          cur.classList.remove("active");
+          next.style.animation = "slideInLeft 0.35s ease both";
+          next.classList.add("active");
+        }
+
+        // Update dots
+        for (let i = 1; i <= 3; i++) {
+          const dot = document.getElementById("stepDot" + i);
+          dot.classList.remove("active", "done");
+          if (i < n) dot.classList.add("done");
+          if (i === n) dot.classList.add("active");
+        }
+        currentStep = n;
+      }
+
+      function validateStep(n) {
+        if (n === 1) {
+          const fn = document.getElementById("first_name").value.trim();
+          const ln = document.getElementById("last_name").value.trim();
+          const age = document.getElementById("age").value;
+          const gender = document.getElementById("gender").value;
+          const h = document.getElementById("height").value;
+          const w = document.getElementById("weight").value;
+          if (!fn || !ln || !age || !gender || !h || !w) {
+            showToast("กรุณากรอกข้อมูลพื้นฐานให้ครบถ้วน", "error");
+            return false;
+          }
+        }
+        return true;
+      }
+
+      // ─── BMI calculation ─────────────────────────
+      function updateBMI() {
+        const h = parseFloat(document.getElementById("height").value);
+        const w = parseFloat(document.getElementById("weight").value);
+        if (!h || !w || h <= 0 || w <= 0) return;
+        const hm = h / 100;
+        const bmi = (w / (hm * hm)).toFixed(1);
+        const el = document.getElementById("bmiValue");
+        const catEl = document.getElementById("bmiCategory");
+        const display = document.getElementById("bmiDisplay");
+        const barFill = document.getElementById("bmiBarFill");
+
+        el.textContent = bmi;
+        display.style.opacity = "1";
+
+        const val = parseFloat(bmi);
+        let cat, color, bmiPct;
+        if (val < 18.5) {
+          cat = "ต่ำกว่าเกณฑ์";
+          color = "#f87171";
+          bmiPct = Math.max(5, (val / 18.5) * 35);
+        } else if (val < 25) {
+          cat = "ปกติ";
+          color = "#34d399";
+          bmiPct = 35 + ((val - 18.5) / 6.5) * 35;
+        } else if (val < 30) {
+          cat = "น้ำหนักเกิน";
+          color = "#fbbf24";
+          bmiPct = 70 + ((val - 25) / 5) * 20;
+        } else {
+          cat = "อ้วน";
+          color = "#ef4444";
+          bmiPct = 90 + Math.min(9, ((val - 30) / 10) * 10);
+        }
+
+        catEl.textContent = `${cat} (BMI = ${bmi} kg/m²)`;
+        catEl.style.color = color;
+        el.style.background = `linear-gradient(135deg,${color},#fff)`;
+        el.style.webkitBackgroundClip = "text";
+        barFill.style.width = Math.min(100, bmiPct) + "%";
+        barFill.style.background = color;
+      }
+
+      // ─── Checkbox cards ──────────────────────────
+      function toggleCheckCard(input) {
+        const card = input.closest(".checkbox-card");
+        card.classList.toggle("checked", input.checked);
+      }
+
+      function toggleSubField(id, show) {
+        document.getElementById(id).classList.toggle("visible", show);
+      }
+
+      let fraxCount = 0;
+      function updateFraxCount() {
+        fraxCount = [
+          document.getElementById("smoking").checked,
+          document.getElementById("alcohol").checked,
+          document.getElementById("steroid_use").checked,
+          document.getElementById("secondary_osteoporosis").checked,
+        ].filter(Boolean).length;
+        document.getElementById("fraxCounter").textContent =
+          `${fraxCount} / 4 ข้อ`;
+      }
+
+      // ─── Summary Preview ─────────────────────────
+      function updateSummaryPreview() {
+        const fn = document.getElementById("first_name").value;
+        const ln = document.getElementById("last_name").value;
+        const age = document.getElementById("age").value;
+        const gender = document.getElementById("gender").value;
+        const h = document.getElementById("height").value;
+        const w = document.getElementById("weight").value;
+        const bmi = document.getElementById("bmiValue").textContent;
+        const factors = [];
+        if (document.getElementById("fragility_fracture").checked)
+          factors.push("Fragility Fracture");
+        if (document.getElementById("parent_hip_fracture").checked)
+          factors.push("พ่อ/แม่สะโพกหัก");
+        if (document.getElementById("smoking").checked)
+          factors.push("สูบบุหรี่");
+        if (document.getElementById("alcohol").checked)
+          factors.push("แอลกอฮอล์");
+        if (document.getElementById("steroid_use").checked)
+          factors.push("สเตียรอยด์");
+        if (document.getElementById("secondary_osteoporosis").checked)
+          factors.push("โรคทุติยภูมิ");
+
+        document.getElementById("summaryPreview").innerHTML = `
+    <div><strong style="color:var(--text)">ผู้ป่วย:</strong> ${fn} ${ln}</div>
+    <div><strong style="color:var(--text)">อายุ/เพศ:</strong> ${age} ปี | ${gender}</div>
+    <div><strong style="color:var(--text)">ส่วนสูง/น้ำหนัก:</strong> ${h} ซม. / ${w} กก. (BMI ${bmi})</div>
+    <div><strong style="color:var(--text)">ปัจจัยเสี่ยง (${factors.length}):</strong> ${factors.length ? factors.join(", ") : "ไม่มี"}</div>
+  `;
+      }
+
+      // ─── Submit Form ─────────────────────────────
+      async function submitForm(e) {
+        e.preventDefault();
+        const btn = document.getElementById("submitBtn");
+        btn.classList.add("loading");
+
+        const bmdCheck = document.getElementById("has_bmd").checked;
+        const body = {
+          first_name: document.getElementById("first_name").value.trim(),
+          last_name: document.getElementById("last_name").value.trim(),
+          age: parseInt(document.getElementById("age").value),
+          gender: document.getElementById("gender").value,
+          height: parseFloat(document.getElementById("height").value),
+          weight: parseFloat(document.getElementById("weight").value),
+          fragility_fracture:
+            document.getElementById("fragility_fracture").checked,
+          fracture_location:
+            document.getElementById("fracture_location").value || null,
+          parent_hip_fracture: document.getElementById("parent_hip_fracture")
+            .checked,
+          smoking: document.getElementById("smoking").checked,
+          alcohol: document.getElementById("alcohol").checked,
+          steroid_use: document.getElementById("steroid_use").checked,
+          steroid_name: document.getElementById("steroid_name").value || null,
+          secondary_osteoporosis: document.getElementById(
+            "secondary_osteoporosis",
+          ).checked,
+          secondary_osteoporosis_detail:
+            document.getElementById("secondary_osteoporosis_detail").value ||
+            null,
+          has_bmd: bmdCheck,
+          bmd_result: bmdCheck
+            ? document.getElementById("bmd_result").value || null
+            : null,
+          recorded_by: document.getElementById("recorded_by").value || null,
+          notes: document.getElementById("notes").value || null,
+        };
+
+        try {
+          const res = await fetch(`${API}/api/patients`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          if (!res.ok) throw new Error("API error");
+          const data = await res.json();
+          btn.classList.remove("loading");
+          showResult(data);
+          resetForm();
+          loadStats();
+        } catch (err) {
+          btn.classList.remove("loading");
+          showToast("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง", "error");
+        }
+      }
+
+      function resetForm() {
+        document.getElementById("fraxForm").reset();
+        document
+          .querySelectorAll(".checkbox-card")
+          .forEach((c) => c.classList.remove("checked"));
+        document
+          .querySelectorAll(".sub-field")
+          .forEach((s) => s.classList.remove("visible"));
+        document.getElementById("bmiValue").textContent = "—";
+        document.getElementById("bmiDisplay").style.opacity = "0.4";
+        document.getElementById("bmiCategory").textContent =
+          "กรุณากรอกส่วนสูงและน้ำหนัก";
+        updateFraxCount();
+        goStep(1);
+      }
+
+      // ─── Show Result ──────────────────────────────
+      const riskConfig = {
+        ไม่มีความเสี่ยง: {
+          iconClass: "fas fa-check-circle",
+          color: "#10b981",
+          cls: "risk-none",
+        },
+        เสี่ยงต่ำ: {
+          iconClass: "fas fa-info-circle",
+          color: "#3b82f6",
+          cls: "risk-low",
+        },
+        เสี่ยงปานกลาง: {
+          iconClass: "fas fa-exclamation-triangle",
+          color: "#f59e0b",
+          cls: "risk-mod",
+        },
+        เสี่ยงสูง: {
+          iconClass: "fas fa-exclamation-circle",
+          color: "#ef4444",
+          cls: "risk-high",
+        },
+      };
+
+      function showResult(p) {
+        const cfg = riskConfig[p.risk_level] || riskConfig["ไม่มีความเสี่ยง"];
+        const modal = document.getElementById("resultModal");
+        modal.style.setProperty("--result-color", cfg.color);
+
+        document.getElementById("resultIcon").innerHTML = `<i class="${cfg.iconClass}" style="color:${cfg.color}"></i>`;
+        document.getElementById("resultRiskLabel").textContent = "ผลการประเมิน";
+        document.getElementById("resultRiskLevel").textContent = p.risk_level;
+        document.getElementById("resultRiskLevel").style.color = cfg.color;
+        document.getElementById("resultRiskEn").textContent = p.risk_level_en;
+
+        document.getElementById("rName").textContent =
+          `${p.first_name} ${p.last_name}`;
+        document.getElementById("rAge").textContent =
+          `${p.age} ปี | ${p.gender}`;
+        document.getElementById("rBMI").textContent = `${p.bmi} kg/m²`;
+        document.getElementById("rFrax").textContent =
+          `${p.frax_count} / 4 ข้อ`;
+
+        // Factor tags
+        const tags = p.risk_factors_summary
+          ? p.risk_factors_summary
+              .split("|")
+              .map((f) => f.trim())
+              .filter(Boolean)
+          : [];
+        document.getElementById("resultFactorTags").innerHTML = tags.length
+          ? tags
+              .map(
+                (t) =>
+                  `<span class="factor-tag"><i class="fas fa-exclamation-circle"></i>${t}</span>`,
+              )
+              .join("")
+          : '<span style="color:var(--text-muted);font-size:0.85rem">ไม่มีปัจจัยเสี่ยงเพิ่มเติม</span>';
+
+        document.getElementById("resultOverlay").classList.add("show");
+      }
+
+      function closeResult() {
+        document.getElementById("resultOverlay").classList.remove("show");
+      }
+
+      // ─── Records ────────────────────────────────
+      let allRecords = [];
+
+      async function loadRecords() {
+        try {
+          const res = await fetch(`${API}/api/patients?limit=200`);
+          allRecords = await res.json();
+          document.getElementById("recordsBadge").textContent =
+            allRecords.length;
+          renderRecords(allRecords);
+        } catch {
+          showToast("ไม่สามารถโหลดข้อมูลได้", "error");
+        }
+      }
+
+      function filterRecords() {
+        const search = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+        const risk = document.getElementById("riskFilter").value;
+        let filtered = allRecords;
+        if (search) {
+          filtered = filtered.filter((p) =>
+            (p.first_name + " " + p.last_name).toLowerCase().includes(search),
+          );
+        }
+        if (risk) {
+          filtered = filtered.filter((p) => p.risk_level === risk);
+        }
+        renderRecords(filtered);
+      }
+
+      function renderRecords(records) {
+        const tbody = document.getElementById("recordsTable");
+        if (!records.length) {
+          tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">
+      <div class="empty-icon"><i class="fas fa-search"></i></div>
+      <div class="empty-text">ไม่พบข้อมูลผู้ป่วย</div>
+    </div></td></tr>`;
+          return;
+        }
+        const riskCls = {
+          ไม่มีความเสี่ยง: "risk-none",
+          เสี่ยงต่ำ: "risk-low",
+          เสี่ยงปานกลาง: "risk-mod",
+          เสี่ยงสูง: "risk-high",
+        };
+        tbody.innerHTML = records
+          .map((p, i) => {
+            const date = p.created_at
+              ? new Date(p.created_at).toLocaleDateString("th-TH", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "—";
+            const cfg = riskConfig[p.risk_level] || {};
+            return `<tr>
+      <td style="color:var(--text-muted);font-size:0.8rem">${i + 1}</td>
+      <td>
+        <div style="font-weight:600">${p.first_name} ${p.last_name}</div>
+      </td>
+      <td>${p.age} ปี</td>
+      <td>${p.gender}</td>
+      <td>
+        <span style="font-weight:600">${p.bmi}</span>
+        <span style="font-size:0.75rem;color:var(--text-muted)"> kg/m²</span>
+      </td>
+      <td>
+        <span style="font-weight:600">${p.frax_count}/4</span>
+      </td>
+      <td>
+        <span class="risk-badge ${riskCls[p.risk_level] || ""}">${p.risk_level}</span>
+      </td>
+      <td style="color:var(--text-muted);font-size:0.82rem">${date}</td>
+      <td>
+        <button class="btn btn-ghost" style="padding:6px 12px;font-size:0.8rem" onclick="viewRecord(${p.id})">
+          <i class="fas fa-eye"></i>
+        </button>
+        <button class="btn btn-danger" style="padding:6px 12px;font-size:0.8rem;margin-left:4px" onclick="deleteRecord(${p.id})">
+          <i class="fas fa-trash"></i>
+        </button>
+      </td>
+    </tr>`;
+          })
+          .join("");
+      }
+
+      async function viewRecord(id) {
+        try {
+          const res = await fetch(`${API}/api/patients/${id}`);
+          const p = await res.json();
+          showResult(p);
+        } catch {
+          showToast("ไม่สามารถโหลดข้อมูลได้", "error");
+        }
+      }
+
+      async function deleteRecord(id) {
+        if (!confirm("ยืนยันการลบข้อมูลผู้ป่วยรายนี้?")) return;
+        try {
+          await fetch(`${API}/api/patients/${id}`, { method: "DELETE" });
+          showToast("ลบข้อมูลเรียบร้อยแล้ว", "success");
+          loadRecords();
+          loadStats();
+        } catch {
+          showToast("เกิดข้อผิดพลาด", "error");
+        }
+      }
+
+      // ─── Stats ───────────────────────────────────
+      async function loadStats() {
+        try {
+          const res = await fetch(`${API}/api/stats`);
+          const s = await res.json();
+          animateNumber("statTotal", s.total);
+          animateNumber("statNoRisk", s.no_risk);
+          animateNumber("statLow", s.low_risk);
+          animateNumber("statMod", s.moderate_risk);
+          animateNumber("statHigh", s.high_risk);
+
+          renderStatsChart(s);
+          document.getElementById("recordsBadge").textContent = s.total;
+        } catch {}
+      }
+
+      function animateNumber(id, target) {
+        const el = document.getElementById(id);
+        const start = parseInt(el.textContent) || 0;
+        const dur = 800;
+        const startTime = performance.now();
+        function update(now) {
+          const t = Math.min((now - startTime) / dur, 1);
+          el.textContent = Math.round(start + (target - start) * easeOut(t));
+          if (t < 1) requestAnimationFrame(update);
+        }
+        requestAnimationFrame(update);
+      }
+
+      function easeOut(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function renderStatsChart(s) {
+        const items = [
+          {
+            label: "ไม่มีความเสี่ยง",
+            count: s.no_risk,
+            color: "#10b981",
+            bg: "rgba(16,185,129,0.15)",
+          },
+          {
+            label: "เสี่ยงต่ำ",
+            count: s.low_risk,
+            color: "#3b82f6",
+            bg: "rgba(59,130,246,0.15)",
+          },
+          {
+            label: "เสี่ยงปานกลาง",
+            count: s.moderate_risk,
+            color: "#f59e0b",
+            bg: "rgba(245,158,11,0.15)",
+          },
+          {
+            label: "เสี่ยงสูง",
+            count: s.high_risk,
+            color: "#ef4444",
+            bg: "rgba(239,68,68,0.15)",
+          },
+        ];
+        const total = s.total || 1;
+        document.getElementById("statsChart").innerHTML = items
+          .map((it) => {
+            const pct = ((it.count / total) * 100).toFixed(1);
+            return `
+      <div style="margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:0.9rem;font-weight:600">${it.label}</span>
+          <span style="font-size:0.875rem;color:var(--text-muted)">${it.count} ราย (${pct}%)</span>
+        </div>
+        <div class="mini-bar" style="height:12px">
+          <div class="mini-bar-fill" data-pct="${pct}" style="width:0%;background:${it.color};transition:width 1s ease"></div>
+        </div>
+      </div>`;
+          })
+          .join("");
+
+        // Animate bars
+        setTimeout(() => {
+          document
+            .querySelectorAll(".mini-bar-fill[data-pct]")
+            .forEach((el) => {
+              el.style.width = el.dataset.pct + "%";
+            });
+        }, 100);
+      }
+
+      // ─── Toast ───────────────────────────────────
+      function showToast(msg, type = "success") {
+        const t = document.createElement("div");
+        t.className = `toast toast-${type}`;
+        t.innerHTML = `<i class="fas fa-${type === "success" ? "check-circle" : "exclamation-circle"}"></i> ${msg}`;
+        document.getElementById("toastContainer").appendChild(t);
+        setTimeout(() => t.remove(), 3500);
+      }
+
+      // ─── Intro Screen ────────────────────────────
+      function enterApp() {
+        const intro = document.getElementById("intro-screen");
+        intro.classList.add("fade-out");
+        setTimeout(() => {
+          intro.style.display = "none";
+          const app = document.getElementById("app");
+          app.style.opacity = "0";
+          app.style.transform = "translateY(12px)";
+          app.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+          setTimeout(() => {
+            app.style.opacity = "1";
+            app.style.transform = "translateY(0)";
+          }, 30);
+        }, 650);
+      }
+
+      function backToIntro() {
+        const app = document.getElementById("app");
+        const intro = document.getElementById("intro-screen");
+        app.style.transition = "opacity 0.35s ease, transform 0.35s ease";
+        app.style.opacity = "0";
+        app.style.transform = "translateY(16px)";
+        setTimeout(() => {
+          intro.style.display = "";
+          intro.style.opacity = "0";
+          intro.style.transition = "opacity 0.5s ease";
+          intro.classList.remove("fade-out");
+          setTimeout(() => {
+            intro.style.opacity = "1";
+          }, 30);
+        }, 360);
+      }
+
+      // ─── Init ────────────────────────────────────
+      window.addEventListener("DOMContentLoaded", () => {
+        loadStats();
+      });
+
+      // Close modal on overlay click
+      document
+        .getElementById("resultOverlay")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeResult();
+        });
+    </script>
+  </body>
+</html>
