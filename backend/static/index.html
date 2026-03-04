@@ -1578,8 +1578,8 @@
               margin-left: 16px;
               padding: 7px 14px;
               border-radius: 20px;
-              border: 1px solid rgba(255,255,255,0.15);
-              background: rgba(255,255,255,0.07);
+              border: 1px solid rgba(255, 255, 255, 0.15);
+              background: rgba(255, 255, 255, 0.07);
               color: var(--text-muted);
               font-size: 0.78rem;
               font-family: inherit;
@@ -1587,10 +1587,18 @@
               display: flex;
               align-items: center;
               gap: 6px;
-              transition: background 0.2s, color 0.2s;
+              transition:
+                background 0.2s,
+                color 0.2s;
             "
-            onmouseover="this.style.background='rgba(255,255,255,0.13)';this.style.color='var(--text)'"
-            onmouseout="this.style.background='rgba(255,255,255,0.07)';this.style.color='var(--text-muted)'"
+            onmouseover="
+              this.style.background = 'rgba(255,255,255,0.13)';
+              this.style.color = 'var(--text)';
+            "
+            onmouseout="
+              this.style.background = 'rgba(255,255,255,0.07)';
+              this.style.color = 'var(--text-muted)';
+            "
           >
             <i class="fas fa-home"></i> หน้าหลัก
           </button>
@@ -2034,9 +2042,7 @@
                   />
                   <div class="cb-icon"></div>
                   <div class="cb-text">
-                    <div class="cb-title">
-                      มีผล BMD (Bone Mineral Density)
-                    </div>
+                    <div class="cb-title">มีผล BMD (Bone Mineral Density)</div>
                     <div class="cb-desc">เลือกหากผู้ป่วยมีผล DXA หรือ BMD</div>
                   </div>
                 </label>
@@ -2166,6 +2172,13 @@
             >
               <i class="fas fa-sync-alt"></i> รีเฟรช
             </button>
+            <button
+              class="btn btn-ghost"
+              onclick="exportJSON()"
+              style="white-space: nowrap; border-color: rgba(99,102,241,0.4); color: var(--primary-l);"
+            >
+              <i class="fas fa-file-download"></i> ส่งออก JSON
+            </button>
           </div>
 
           <div class="card" style="padding: 0; overflow: hidden">
@@ -2188,7 +2201,9 @@
                   <tr>
                     <td colspan="9">
                       <div class="empty-state">
-                        <div class="empty-icon"><i class="fas fa-clipboard-list"></i></div>
+                        <div class="empty-icon">
+                          <i class="fas fa-clipboard-list"></i>
+                        </div>
                         <div class="empty-text">กำลังโหลดข้อมูล...</div>
                       </div>
                     </td>
@@ -2283,7 +2298,9 @@
           <button onclick="closeResult()"><i class="fas fa-times"></i></button>
         </div>
 
-        <div class="result-icon-wrap" id="resultIcon"><i class="fas fa-bone"></i></div>
+        <div class="result-icon-wrap" id="resultIcon">
+          <i class="fas fa-bone"></i>
+        </div>
         <div class="result-risk-label" id="resultRiskLabel">
           ระดับความเสี่ยง
         </div>
@@ -2605,7 +2622,8 @@
         const modal = document.getElementById("resultModal");
         modal.style.setProperty("--result-color", cfg.color);
 
-        document.getElementById("resultIcon").innerHTML = `<i class="${cfg.iconClass}" style="color:${cfg.color}"></i>`;
+        document.getElementById("resultIcon").innerHTML =
+          `<i class="${cfg.iconClass}" style="color:${cfg.color}"></i>`;
         document.getElementById("resultRiskLabel").textContent = "ผลการประเมิน";
         document.getElementById("resultRiskLevel").textContent = p.risk_level;
         document.getElementById("resultRiskLevel").style.color = cfg.color;
@@ -2654,6 +2672,26 @@
           renderRecords(allRecords);
         } catch {
           showToast("ไม่สามารถโหลดข้อมูลได้", "error");
+        }
+      }
+
+      async function exportJSON() {
+        try {
+          showToast("กำลังเตรียมไฟล์...", "success");
+          const res = await fetch(`${API}/api/patients/export/json`);
+          if (!res.ok) throw new Error();
+          const blob = await res.blob();
+          const now = new Date();
+          const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `frax_patients_${ts}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+          showToast("ດาวน์โหลด JSON สำเร็จ", "success");
+        } catch {
+          showToast("ไม่สามารถส่งออกข้อมูลได้", "error");
         }
       }
 
