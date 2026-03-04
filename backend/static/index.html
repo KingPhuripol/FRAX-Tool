@@ -2175,7 +2175,11 @@
             <button
               class="btn btn-ghost"
               onclick="exportJSON()"
-              style="white-space: nowrap; border-color: rgba(99,102,241,0.4); color: var(--primary-l);"
+              style="
+                white-space: nowrap;
+                border-color: rgba(99, 102, 241, 0.4);
+                color: var(--primary-l);
+              "
             >
               <i class="fas fa-file-download"></i> ส่งออก JSON
             </button>
@@ -2682,7 +2686,7 @@
           if (!res.ok) throw new Error();
           const blob = await res.blob();
           const now = new Date();
-          const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+          const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
